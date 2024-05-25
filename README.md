@@ -1,4 +1,4 @@
-# Export-Azure-AD-Device-BitLockerKey #
+# Export-Azure-AD-Device-BitLocker-Key #
 
 .\ExportBitLockerKey.ps1 provides the capability to Extract Device BitLocker Key avaiable on Azure Ad.
 
