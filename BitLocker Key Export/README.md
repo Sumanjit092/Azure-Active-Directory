@@ -2,7 +2,7 @@
 
 .\ExportBitLockerKey.ps1 provides the capability to Extract Device BitLocker Key avaiable on Azure Ad.
 
-BitLocker is an inbuilt encryption feature that has been included with all versions of Windows since Vista. It is designed to protect your files and data from unauthorized access by encrypting your entire hard drive. The encrypted drive can only be accessed with a password or a smart card that you set up when you turned on Bitlocker Drive Encryption on that drive. If anyone tries to access your encrypted drive without proper authentication, access is denied.
+BitLocker is an in built encryption feature that has been included with all versions of Windows since Vista. It is designed to protect your files and data from unauthorized access by encrypting your entire hard drive. The encrypted drive can only be accessed with a password or a smart card that you set up when you turned on Bitlocker Drive Encryption on that drive. If anyone tries to access your encrypted drive without proper authentication, access is denied.
 
 BitLocker Drive Encryption is a data protection feature that integrates with the operating system and addresses the threats of data theft or exposure from lost, stolen, or inappropriately decommissioned computers.
 
