@@ -1,32 +1,30 @@
-# Export AzureAD Device BitLocker Key #
+# Azure AD BitLocker Key Export PowerShell Script
 
-.\ExportBitLockerKey.ps1 provides the capability to Extract Device BitLocker Key avaiable on Azure Ad.
+## Synopsis
 
-BitLocker is an in built encryption feature that has been included with all versions of Windows since Vista. It is designed to protect your files and data from unauthorized access by encrypting your entire hard drive. The encrypted drive can only be accessed with a password or a smart card that you set up when you turned on Bitlocker Drive Encryption on that drive. If anyone tries to access your encrypted drive without proper authentication, access is denied.
+This PowerShell script automates the process of retrieving BitLocker keys from Azure Active Directory for devices with Windows OS. It exports the BitLocker key information along with device details into a CSV file.
 
-BitLocker Drive Encryption is a data protection feature that integrates with the operating system and addresses the threats of data theft or exposure from lost, stolen, or inappropriately decommissioned computers.
+## Motivation
 
-BitLocker provides the most protection when used with a Trusted Platform Module (TPM) version 1.2 or later. The TPM is a hardware component installed in many newer computers by the computer manufacturers. It works with BitLocker to help protect user data and to ensure that a computer has not been tampered with while the system was offline.
+The motivation behind this script is to simplify the task of managing BitLocker keys for organizations using Azure Active Directory. By automating the retrieval process, administrators can quickly generate reports and manage BitLocker keys efficiently.
 
-For more information, kindly visit the link: https://docs.microsoft.com/en-us/windows/security/information-protection/bitlocker/bitlocker-overview
+## Features
 
-Run Powershell as Elevated User.
-To run the PowerShell window with elevated permissions just click Start then type PowerShell then Right-Click on PowerShell icon and select Run as Administrator.
+- Retrieves BitLocker keys from Azure AD for Windows devices.
+- Generates a CSV report containing device information and BitLocker key details.
+- Supports both interactive and non-interactive (saved credentials) modes.
 
-.\ExportBitLockerKey.ps1 will check for Azure Resource Module. If module is not installed it will Install module. Then,
-.\ExportBitLockerKey.ps1 will prompt you to enter your Azure Tenant credentials.
+## Prerequisites
 
-Additionally, .\ExportBitLockerKey.ps1 will check for AzureAd Module. If module is not installed it will Install module. Then,
-.\ExportBitLockerKey.ps1 will prompt you to enter your Azure Tenant credentials.
+Before using this script, ensure the following prerequisites are met:
 
-You must have read access to your organization Azure Resource Subscription. Also, you should have Gloabal Reader Permission on Azure Ad.
+- Azure PowerShell module is installed (`Az`).
+- Azure Active Directory PowerShell module is installed (`AzureAD`).
+- Proper permissions to access Azure AD and retrieve device information.
 
-After successful login, .\ExportBitLockerKey.ps1 will Export BitLockerReport.Csv Report under "C:\Temp\" Folder. Report export can take few hours depending on total number of device in AzureAd.
+## Installation
 
-Report contains DeviceName, DriveType, KeyID, RecoveryKey, OwnerUserPrincipalName, OwnerDisplayName, CompanyName
+1. Clone the repository to your local machine:
 
-Important Notes:
-This source code is freeware and is provided on an "as is" basis without warranties of any kind, whether express or implied, including without limitation warranties that the code is free of defect, fit for a particular purpose or non-infringing. The entire risk as to the quality and performance of the code is with the end user.
-
-If you have any question, suggestion or issue with this script please feel free to leave comments.
-
+   ```bash
+   git clone https://github.com/yourusername/azure-ad-bitlocker-export.git
