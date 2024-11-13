@@ -15,10 +15,11 @@
     Sumanjit Pan
 
 .VERSION:
-    1.0
+    1.0 - Intitial Version
+    1.1 - Patch: Account Creation Threshold Days
 
 .DATE:
-    6th September, 2024
+    13th November, 2024
 
 .FIRST PUBLISH DATE:
     6th September, 2024
@@ -133,6 +134,7 @@ function Log-Error {
 
 # Define the number of days after which guest users are considered inactive
 $inactiveThresholdDays = 90
+$accountCreationThresholdDays = 90
 
 # Get today's date in UTC
 $today = Get-Date -AsUTC
@@ -178,14 +180,25 @@ foreach ($invite in $acceptedInvites) {
 
 # Process each guest user
 foreach ($user in $guestUsers) {
+    # Check if the account creation date is older than the threshold
+    $accountCreationDate = $user.CreatedDateTime
+    $daysSinceAccountCreation = if ($accountCreationDate) { ($today - [DateTime]$accountCreationDate).Days } else { $null }
+
+    # Skip users whose account was created less than $accountCreationThresholdDays ago
+    if ($daysSinceAccountCreation -lt $accountCreationThresholdDays) {
+        Write-Host "User $($user.UserPrincipalName) was created less than $accountCreationThresholdDays days ago, skipping." -ForegroundColor Yellow
+        continue  # Skip this user from further processing
+    }
+
+    # If account is old enough, proceed with inactivity check
     $signInDate = $user.SignInActivity.LastSignInDateTime
     $daysSinceLastSignIn = if ($signInDate) { ($today - [DateTime]$signInDate).Days } else { $null }
-    $onPremisesStatus = if ($user.OnPremisesSyncEnabled) { "Enabled" } else { "Disabled" }
+    $onPremisesStatus = if ($user.OnPremisesSyncEnabled -eq $true) { "Enabled" } else { "Disabled" }
 
     # Create a custom object with user details
     $userDetails = [PSCustomObject]@{
-        UPN                    = $user.UserPrincipalName
         DisplayName            = $user.DisplayName
+        UPN                    = $user.UserPrincipalName
         ObjectId               = $user.Id
         AccountEnabled         = $user.AccountEnabled
         Email                  = $user.Mail
