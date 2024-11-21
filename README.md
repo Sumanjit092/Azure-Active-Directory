@@ -3,4 +3,5 @@
 2. Group Member Management Tool (Azure Active Directory)
 3. Guest User Management
 4. User Authentication Report (MFA)
-5. Upcoming.....
+5. Self-Signed Certificate (Azure Ad Application)
+6. Upcoming.....................
