@@ -4,4 +4,5 @@
 3. Guest User Management
 4. User Authentication Report (MFA)
 5. Self-Signed Certificate (Azure Ad Application)
-6. Upcoming.....................
+6. Group Management Insights
+7. Upcoming.....................
