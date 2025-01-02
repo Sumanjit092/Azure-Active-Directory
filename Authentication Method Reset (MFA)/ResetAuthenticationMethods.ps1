@@ -13,6 +13,7 @@
 
 .VERSION:
     1.0 - Initial Version
+    1.1 - Patch (Import-Module)
 
 .DATE:
     31st December, 2024
@@ -38,15 +39,14 @@ Function CheckMSGraph {
     Write-Host "Checking Microsoft Graph Module..." -ForegroundColor Yellow
     if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph" -or $_.Name -like "Microsoft.Graph.Beta" }) {
         Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
-        Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Identity.DirectoryManagement', 'Microsoft.Graph.Beta.Identity.SignIns', 'Microsoft.Graph.Reports', 'Microsoft.Graph.Beta.Identity.SignIns', 'Microsoft.Graph.Beta.Reports'
-        Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
+        Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Identity.DirectoryManagement', 'Microsoft.Graph.Reports', 'Microsoft.Graph.Identity.SignIns'
     } else {
         Write-Host "Microsoft Graph Module is not installed." -ForegroundColor Red
         Write-Host "Installing Microsoft Graph Module..." -ForegroundColor Yellow
         Install-Module -Name "Microsoft.Graph", "Microsoft.Graph.Beta" -Force
         if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph" -or $_.Name -like "Microsoft.Graph.Beta" }) {
             Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
-            Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Identity.DirectoryManagement', 'Microsoft.Graph.Beta.Identity.SignIns', 'Microsoft.Graph.Reports', 'Microsoft.Graph.Beta.Identity.SignIns', 'Microsoft.Graph.Beta.Reports'
+            Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Identity.DirectoryManagement', 'Microsoft.Graph.Reports', 'Microsoft.Graph.Identity.SignIns'
             Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
         } else {
             Write-Host "Operation aborted. Microsoft Graph Module was not installed." -ForegroundColor Red
