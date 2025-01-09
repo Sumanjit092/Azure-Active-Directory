@@ -1,5 +1,4 @@
 <#
-
 .SYNOPSIS:
     The Group Details Retrieval PowerShell Script automates the process of fetching and processing group information from Microsoft Graph. It allows administrators to filter groups
     based on their synchronization status and export detailed group data to an Excel file. The script also logs any errors encountered during execution.
@@ -20,7 +19,6 @@
 
 .FIRST PUBLISH DATE:
     23rd December, 2024
-
 #>
 
 param (
@@ -28,58 +26,47 @@ param (
     [switch]$OnPremGroup
 )
 
-Function CheckInternet
-{
-$statuscode = (Invoke-WebRequest -Uri https://adminwebservice.microsoftonline.com/ProvisioningService.svc).statuscode
-if ($statuscode -ne 200){
-''
-''
-Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
-exit
-}
-}
-
-Function CheckMSGraph{
-''
-Write-Host "Checking Microsoft Graph Module..." -ForegroundColor Yellow
-                            
-    if (Get-Module -ListAvailable | Where-Object {$_.Name -like "Microsoft.Graph"}) 
-    {
-    Write-Host "Microsoft Graph Module has installed." -ForegroundColor Green
-    Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Groups'
-    Write-Host "Microsoft Graph Module has imported." -ForegroundColor Cyan
-    ''
-    ''
-    } else
-    {
-    Write-Host "Microsoft Graph Module is not installed." -ForegroundColor Red
-    ''
-    Write-Host "Installing Microsoft Graph Module....." -ForegroundColor Yellow
-    Install-Module -Name "Microsoft.Graph" -Force
-                                
-    if (Get-Module -ListAvailable | Where-Object {$_.Name -like "Microsoft.Graph"}) {                                
-    Write-Host "Microsoft Graph Module has installed." -ForegroundColor Green
-    Import-Module -Name 'Microsoft.Graph.Users','Microsoft.Graph.Groups'
-    Write-Host "Microsoft Graph Module has imported." -ForegroundColor Cyan
-    ''
-    ''
-    } else
-    {
-    ''
-    ''
-    Write-Host "Operation aborted. Microsoft Graph Module was not installed." -ForegroundColor Red
-    Exit}
+Function CheckInternet {
+    try {
+        $statuscode = (Invoke-WebRequest -Uri https://adminwebservice.microsoftonline.com/ProvisioningService.svc -UseBasicParsing).StatusCode
+        if ($statuscode -ne 200) {
+            Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
+            exit
+        }
+    } catch {
+        Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
+        exit
     }
+}
 
-Write-Host "Connecting to Microsoft Graph PowerShell..." -ForegroundColor Magenta
-
-Connect-MgGraph -ClientId "App Client ID" -TenantId "Entra ID Tenant ID" -CertificateThumbprint "Cert Thumbprint" -NoWelcome
-
-$MgContext= Get-MgContext
-
-Write-Host "User '$($MgContext.Account)' has connected to TenantId '$($MgContext.TenantId)' Microsoft Graph API successfully." -ForegroundColor Green
-''
-''
+Function CheckMSGraph {
+    Write-Host "Checking Microsoft Graph Module..." -ForegroundColor Yellow
+    if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph"}) {
+        Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
+        Import-Module -Name 'Microsoft.Graph.Users', 'Microsoft.Graph.Groups'
+        Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
+    } else {
+        Write-Host "Microsoft Graph Module is not installed." -ForegroundColor Red
+        Write-Host "Installing Microsoft Graph Module..." -ForegroundColor Yellow
+        Install-Module -Name "Microsoft.Graph" -Force
+        if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph"}) {
+            Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
+            Import-Module -Name 'Microsoft.Graph.Users', 'Microsoft.Graph.Groups'
+            Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
+        } else {
+            Write-Host "Operation aborted. Microsoft Graph Module was not installed." -ForegroundColor Red
+            Exit
+        }
+    }
+    Write-Host "Connecting to Microsoft Graph PowerShell..." -ForegroundColor Magenta
+    try {
+        Connect-MgGraph -ClientId "YourAppClientID" -TenantId "YourTenantID" -CertificateThumbprint "YourCertThumbprint" -NoWelcome
+        $MgContext = Get-MgContext
+        Write-Host "User '$($MgContext.Account)' has connected to TenantId '$($MgContext.TenantId)' Microsoft Graph API successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Operation aborted. Unable to connect to Microsoft Graph API." -ForegroundColor Red
+        exit
+    }
 }
 
 Cls
@@ -89,19 +76,19 @@ Write-Host '                                       Group Insight Script         
 '===================================================================================================='
 
 Write-Host ""
-Write-Host "                                          IMPORTANT NOTES                                           " -ForegroundColor Red 
+Write-Host "                                          IMPORTANT NOTES                                           " -ForegroundColor Red
 Write-Host "===================================================================================================="
-Write-Host "This script is provided as freeware and on an 'as is' basis without any warranties of any kind," -ForegroundColor Yellow 
-Write-Host "express or implied. This includes, but is not limited to, warranties of defect-free code," -ForegroundColor Yellow 
-Write-Host "fitness for a particular purpose, or non-infringement. The user assumes all risks related to the" -ForegroundColor Yellow 
+Write-Host "This script is provided as freeware and on an 'as is' basis without any warranties of any kind," -ForegroundColor Yellow
+Write-Host "express or implied. This includes, but is not limited to, warranties of defect-free code," -ForegroundColor Yellow
+Write-Host "fitness for a particular purpose, or non-infringement. The user assumes all risks related to the" -ForegroundColor Yellow
 Write-Host "quality and performance of this script." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "The script retrieves and processes group details from Microsoft 365 based on their synchronization" -ForegroundColor Yellow 
+Write-Host "The script retrieves and processes group details from Microsoft 365 based on their synchronization" -ForegroundColor Yellow
 Write-Host "status. It collects information about group owners, members, and various group properties, and" -ForegroundColor Yellow
 Write-Host "exports this data to an Excel file for further analysis. Additionally, it logs any errors encountered" -ForegroundColor Yellow
 Write-Host "during execution." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "For more information on Microsoft Graph API and group management, please visit the following links:" -ForegroundColor Yellow 
+Write-Host "For more information on Microsoft Graph API and group management, please visit the following links:" -ForegroundColor Yellow
 Write-Host "https://learn.microsoft.com/en-us/graph/api/resources/group?view=graph-rest-1.0" -ForegroundColor Yellow
 Write-Host "https://learn.microsoft.com/en-us/graph/api/group-list?view=graph-rest-1.0" -ForegroundColor Yellow
 Write-Host "https://learn.microsoft.com/en-us/microsoft-365/admin/create-groups/manage-groups?view=o365-worldwide" -ForegroundColor Yellow
@@ -132,14 +119,13 @@ function Log-Error {
 # Retrieve all groups
 try {
     $groups = Get-MgGroup -All -Property DisplayName, Id, Description, Mail, MailNickName, GroupTypes, OnPremisesSyncEnabled,
-    CreatedDateTime, SecurityEnabled, MailEnabled, EExpirationDateTime, RenewedDateTime
-    
+    CreatedDateTime, SecurityEnabled, MailEnabled, ExpirationDateTime, RenewedDateTime
 } catch {
     Log-Error "Failed to retrieve groups: $_"
     throw
 }
 
-# Filter users based on the switches
+# Filter groups based on the switches
 if ($CloudOnlyGroup -and -not $OnPremGroup) {
     $groups = $groups | Where-Object { ($_.OnPremisesSyncEnabled -eq $null) -or ($_.OnPremisesSyncEnabled -ne $true) }
 } elseif ($OnPremGroup -and -not $CloudOnlyGroup) {
@@ -200,7 +186,7 @@ foreach ($group in $groups) {
             "Security Group"
         } else {
             "Unknown"
-        }    
+        }
 
         # Determine the group source
         $Source = if ($group.OnPremisesSyncEnabled -eq $true) { 
@@ -256,6 +242,13 @@ foreach ($group in $groups) {
 
 # Output the group details to an Excel file
 try {
+    # Ensure the ImportExcel module is available
+    if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
+        Write-Host "ImportExcel module is not installed. Installing now..." -ForegroundColor Yellow
+        Install-Module -Name ImportExcel -Force
+    }
+    Import-Module -Name ImportExcel
+
     $groupDetails | Export-Excel -Path $outputFilePath -WorksheetName "AllGroups" -BoldTopRow `
         -Title "Group Data" -TitleBold -TitleSize 14 -TitleBackgroundColor "Yellow"
     Write-Host "Export to Excel completed successfully. File saved at: $outputFilePath" -ForegroundColor Green
