@@ -5,4 +5,6 @@
 4. User Authentication Report (MFA)
 5. Self-Signed Certificate (Azure Ad Application)
 6. Azure Active Directory Group Insights
-7. Upcoming.....................
+7. M365 Password Reset Tool
+8. M365 MFA Reset Tool
+9. Upcoming.....................
