@@ -13,22 +13,28 @@
 
 .VERSION
     1.0 - Initial Version
+    1.1 - Patch Version (Bug Fix)
 
 .DATE
-    2nd January, 2025
+    9th January, 2025
 
 .FIRST PUBLISH DATE
     2nd January, 2025
 #>
 
 param (
-    [Parameter( Mandatory=$true)]
+    [Parameter(Mandatory=$true)]
     [string]$UserPrincipalName
 )
 
 Function CheckInternet {
-    $statuscode = (Invoke-WebRequest -Uri https://adminwebservice.microsoftonline.com/ProvisioningService.svc -UseBasicParsing).StatusCode
-    if ($statuscode -ne 200){
+    try {
+        $statuscode = (Invoke-WebRequest -Uri https://adminwebservice.microsoftonline.com/ProvisioningService.svc -UseBasicParsing).StatusCode
+        if ($statuscode -ne 200) {
+            Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
+            exit
+        }
+    } catch {
         Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
         exit
     }
@@ -54,9 +60,14 @@ Function CheckMSGraph {
         }
     }
     Write-Host "Connecting to Microsoft Graph PowerShell..." -ForegroundColor Magenta
-    #Connect-MgGraph -ClientId "App Client ID" -TenantId "Entra ID Tenant ID" -CertificateThumbprint "Cert Thumbprint" -NoWelcome
-    $MgContext = Get-MgContext
-    Write-Host "User '$($MgContext.Account)' has connected to TenantId '$($MgContext.TenantId)' Microsoft Graph API successfully." -ForegroundColor Green
+    try {
+        Connect-MgGraph -ClientId "YourAppClientID" -TenantId "YourTenantID" -CertificateThumbprint "YourCertThumbprint" -NoWelcome
+        $MgContext = Get-MgContext
+        Write-Host "User '$($MgContext.Account)' has connected to TenantId '$($MgContext.TenantId)' Microsoft Graph API successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Operation aborted. Unable to connect to Microsoft Graph API." -ForegroundColor Red
+        exit
+    }
 }
 
 Cls
@@ -90,16 +101,16 @@ CheckMSGraph
 # Function to generate a random password
 function Generate-RandomPassword {
     param (
-    [int]$Length = 10
+        [int]$Length = 10
     )
     $upperCase = Get-Random -Count 2 -InputObject ([char[]]'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
     $lowerCase = Get-Random -Count 2 -InputObject ([char[]]'abcdefghijklmnopqrstuvwxyz')
     $numbers = Get-Random -Count 2 -InputObject ([char[]]'0123456789')
     $specialChars = Get-Random -Count 2 -InputObject ([char[]]'!@#$%^&*()-_=+[]{}|;:,.<>?')
 
-# Combine and shuffle the characters
-$allChars = $upperCase + $lowerCase + $numbers + $specialChars
-$shuffledChars = $allChars | Sort-Object {Get-Random}
+    # Combine and shuffle the characters
+    $allChars = $upperCase + $lowerCase + $numbers + $specialChars
+    $shuffledChars = $allChars | Sort-Object {Get-Random}
 
     # Ensure password length
     $remainingLength = $Length - $shuffledChars.Length
@@ -113,17 +124,16 @@ $shuffledChars = $allChars | Sort-Object {Get-Random}
 }
 
 # Function to reset a user's password
-
 function Reset-UserPassword {
     param (
         [string]$UserPrincipalName
-        )
+    )
 
     # Generate a random password
     $newPassword = Generate-RandomPassword
     # Reset the password
     try {
-          Update-MgUser -UserId $UserPrincipalName -AccountEnabled:$true -PasswordProfile @{
+        Update-MgUser -UserId $UserPrincipalName -AccountEnabled:$true -PasswordProfile @{
             forceChangePasswordNextSignIn = $true
             password = $newPassword
         }
@@ -135,7 +145,7 @@ function Reset-UserPassword {
     }
 }
 
-# Replace 'user@domain.com' with the UPN of the user whose password you want to reset
+# Reset the user's password
 Reset-UserPassword -UserPrincipalName "$($UserPrincipalName)"
 
 # Disconnect from Microsoft Graph
