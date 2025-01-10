@@ -1,0 +1,257 @@
+<#
+.SYNOPSIS
+   The Application Registration Audit PowerShell Script collects application registration details within a Microsoft 365 environment.
+   This script is essential for administrators aiming to manage and audit application registrations efficiently.
+
+.DESCRIPTION
+    Audit-AppRegistrations.ps1 is a robust PowerShell script designed to collect application registration details in Microsoft 365 using the Microsoft Graph API.
+    By connecting to Microsoft Graph with the necessary permissions, the script retrieves detailed information about applications, including owner information and credential details.
+    It processes this data and exports the results to a CSV file, logging any errors encountered during execution.
+
+.AUTHOR
+    Sumanjit Pan
+
+.VERSION
+    1.0 - Initial Version
+
+.DATE
+    10th January, 2025
+
+.FIRST PUBLISH DATE
+    10th January, 2025
+#>
+
+Function CheckInternet {
+    try {
+        $statuscode = (Invoke-WebRequest -Uri https://adminwebservice.microsoftonline.com/ProvisioningService.svc -UseBasicParsing).StatusCode
+        if ($statuscode -ne 200) {
+            Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
+            exit
+        }
+    } catch {
+        Write-Host "Operation aborted. Unable to connect to Microsoft Graph, please check your internet connection." -ForegroundColor Red
+        exit
+    }
+}
+
+Function CheckMSGraph {
+    Write-Host "Checking Microsoft Graph Module..." -ForegroundColor Yellow
+    if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph" }) {
+        Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
+        Import-Module -Name 'Microsoft.Graph.Applications', 'Microsoft.Graph.Users'
+        Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
+    } else {
+        Write-Host "Microsoft Graph Module is not installed." -ForegroundColor Red
+        Write-Host "Installing Microsoft Graph Module..." -ForegroundColor Yellow
+        Install-Module -Name "Microsoft.Graph" -Force
+        if (Get-Module -ListAvailable | Where-Object { $_.Name -like "Microsoft.Graph" }) {
+            Write-Host "Microsoft Graph Module is installed." -ForegroundColor Green
+            Import-Module -Name 'Microsoft.Graph.Applications', 'Microsoft.Graph.Users'
+            Write-Host "Microsoft Graph Module is imported." -ForegroundColor Cyan
+        } else {
+            Write-Host "Operation aborted. Microsoft Graph Module was not installed." -ForegroundColor Red
+            Exit
+        }
+    }
+    Write-Host "Connecting to Microsoft Graph PowerShell..." -ForegroundColor Magenta
+    Connect-MgGraph -ClientId "App Client ID" -TenantId "Entra ID Tenant ID" -CertificateThumbprint "Cert Thumbprint" -NoWelcome
+    $MgContext = Get-MgContext
+    Write-Host "User '$($MgContext.Account)' has connected to TenantId '$($MgContext.TenantId)' Microsoft Graph API successfully." -ForegroundColor Green
+}
+
+Cls
+
+"===================================================================================================="
+Write-Host '                              Application Registration Audit                                 ' -ForegroundColor Green
+"===================================================================================================="
+
+Write-Host ""
+Write-Host "                                          IMPORTANT NOTES                                           " -ForegroundColor Red
+Write-Host "===================================================================================================="
+Write-Host "This script is provided as freeware and on an 'as is' basis without any warranties of any kind," -ForegroundColor Yellow
+Write-Host "express or implied. This includes, but is not limited to, warranties of defect-free code," -ForegroundColor Yellow
+Write-Host "fitness for a particular purpose, or non-infringement. The user assumes all risks related to the" -ForegroundColor Yellow
+Write-Host "quality and performance of this script." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "The script retrieves application registration details from Microsoft 365 using Microsoft Graph API," -ForegroundColor Yellow
+Write-Host "including owner information and credential details. It processes this data and exports the results" -ForegroundColor Yellow
+Write-Host "to a CSV file. Any errors encountered during execution are logged." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "For more information on Microsoft Graph API and application management, please visit the following links:" -ForegroundColor Yellow
+Write-Host "https://learn.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0" -ForegroundColor Yellow
+Write-Host "https://learn.microsoft.com/en-us/graph/api/application-list?view=graph-rest-1.0" -ForegroundColor Yellow
+Write-Host "===================================================================================================="
+Write-Host ""
+
+CheckInternet
+CheckMSGraph
+
+# Define paths for documents and output files
+$documentsPath = [System.IO.Path]::Combine($env:USERPROFILE, "Documents")
+$outputFilePath = [System.IO.Path]::Combine($documentsPath, "App_Registration_Report.csv")
+$logFilePath = [System.IO.Path]::Combine($documentsPath, "App_Registration_Log.txt")
+
+# Function to log errors
+function Log-Error {
+    param (
+        [string]$message
+    )
+    # Get the current timestamp
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    # Append the timestamped error message to the log file
+    Add-Content -Path $logFilePath -Value "$timestamp - $message"
+}
+
+# Function to get owner details
+function Get-OwnerDetails {
+    param (
+        [string[]]$ownerIds
+    )
+
+    # Initialize an empty list to store owner details
+    $ownerDetailsList = @()
+
+    # If no owner IDs are provided, return a default object indicating no owners
+    if ($ownerIds.Count -eq 0) {
+        return @([PSCustomObject]@{
+            OwnerType = 'None'; OwnerDisplayName = 'N/A'; OwnerUserPrincipalName = $null })
+    }
+
+    # Iterate through each owner ID to retrieve details
+    foreach ($ownerId in $ownerIds) {
+        try {
+            # Try to get user details
+            $ownerDetails = Get-MgUser -UserId $ownerId -ErrorAction Stop
+            $ownerDetailsList += [PSCustomObject]@{
+                OwnerType = 'User'; 
+                OwnerDisplayName = $ownerDetails.DisplayName; 
+                OwnerUserPrincipalName = $ownerDetails.UserPrincipalName 
+            }
+        } catch {
+            try {
+                # If user details retrieval fails, try to get service principal details
+                $ownerDetails = Get-MgServicePrincipal -ServicePrincipalId $ownerId -ErrorAction Stop
+                $ownerDetailsList += [PSCustomObject]@{
+                    OwnerType = 'Service Principal'; 
+                    OwnerDisplayName = $ownerDetails.DisplayName; 
+                    OwnerUserPrincipalName = $null 
+                }
+            } catch {
+                # Log a verbose message if the owner is not found
+                Write-Verbose "Owner not found: $ownerId"
+            }
+        }
+    }
+
+    # Return the list of owner details
+    return $ownerDetailsList
+}
+
+# Function to collect application details
+function Get-ApplicationDetails {
+    param (
+        [datetime]$today
+    )
+
+    Write-Host "Collecting application details..." -ForegroundColor Cyan
+    # Retrieve the top 100 applications from Microsoft Graph
+    $apps = Get-MgApplication -All
+    $results = @()
+
+    $totalApps = $apps.Count
+    $currentApp = 0
+
+    # Iterate through each application to process its details
+    foreach ($app in $apps) {
+        $currentApp++
+        # Display progress of application processing
+        Write-Progress -Activity "Processing applications" `
+                       -Status "Processing application: $($app.DisplayName) ($currentApp of $totalApps)" `
+                       -PercentComplete (($currentApp / $totalApps) * 100)
+                       
+        # Retrieve owner IDs for the current application
+        $ownerIds = Get-MgApplicationOwner -ApplicationId $app.Id | Select-Object -ExpandProperty Id
+        # Get detailed owner information
+        $ownerDetailsList = Get-OwnerDetails -ownerIds $ownerIds
+
+        # Combine owner details into comma-separated strings
+        $combinedOwnerTypes = ($ownerDetailsList | Select-Object -ExpandProperty OwnerType) -join ', '
+        $combinedOwnerNames = ($ownerDetailsList | Select-Object -ExpandProperty OwnerDisplayName) -join ', '
+        $combinedOwnerUPN = ($ownerDetailsList | Select-Object -ExpandProperty OwnerUserPrincipalName) -join ', '
+
+        # Collect and sort credentials by start date in descending order
+        $credentials = ($app.PasswordCredentials + $app.KeyCredentials) | Sort-Object -Property StartDateTime -Descending
+
+        # Get the most recent credential
+        $recentCredential = $credentials | Select-Object -First 1
+
+        # Skip the application if no valid credentials are found
+        if ($recentCredential -eq $null) {
+            Write-Host "No valid credentials found for application $($app.DisplayName)." -ForegroundColor Red
+            continue
+        }
+        
+        # Skip the credential if it has no end date
+        if ($recentCredential.EndDateTime -eq $null) {
+            Write-Host "Credential with KeyId $($recentCredential.KeyId) has no EndDateTime." -ForegroundColor Red
+            continue
+        }
+
+        # Calculate the number of days until the credential expires
+        $daysUntilExpiration = ($recentCredential.EndDateTime - $today).Days
+        # Determine the credential type based on the source collection
+        $credType = if ($app.PasswordCredentials -contains $recentCredential) { 
+            "Client Secret" 
+        } elseif ($app.KeyCredentials -contains $recentCredential) { 
+            "Certificate" 
+        } else { "Unknown" }
+
+        # Get the thumbprint if the credential is a certificate
+        $thumbPrint = if ($credType -eq "Certificate" -and $recentCredential.CustomKeyIdentifier -ne $null) {
+            [System.Convert]::ToBase64String($recentCredential.CustomKeyIdentifier)
+        } else { 
+            $null 
+        }
+
+        # Add the application details to the results list
+        $results += [PSCustomObject]@{
+            "Application Name"      = $app.DisplayName
+            "Application Id"        = $app.AppId
+            "Object Id"             = $app.Id
+            "SignIn Audiance"       = $app.SignInAudience
+            "Credential Type"       = $credType
+            "Expiry Date"           = $recentCredential.EndDateTime
+            "Start Date"            = $recentCredential.StartDateTime
+            "Owner Type"            = $combinedOwnerTypes
+            "Owner Display Name"    = $combinedOwnerNames
+            "Owner UPN"             = $combinedOwnerUPN
+            "Expired"               = ($daysUntilExpiration -lt 0) ? "Yes" : "No"
+            "Days Until Expiration" = $daysUntilExpiration
+            "Secret/Certificate Id" = if ($recentCredential.KeyId -ne $null) { $recentCredential.KeyId } else { "N/A" }
+            "Description"           = if ($recentCredential.DisplayName -ne $null) { $recentCredential.DisplayName } else { "N/A" }
+            "ThumbPrint"            = $thumbPrint
+        }
+    }
+
+    Write-Host "Application details collection completed." -ForegroundColor Green
+    return $results
+}
+
+# Main script execution
+$allResults = @()
+$today = Get-Date -AsUTC
+
+try {
+    Write-Host "Starting the application details retrieval process..." -ForegroundColor Cyan
+    # Retrieve application details
+    $allResults += Get-ApplicationDetails -today $today
+} catch {
+    # Log any errors that occur during the retrieval process
+    Log-Error -message "Error retrieving application details: $_.Exception.Message"
+}
+
+# Output results and export to CSV
+Write-Host "Exporting results to CSV file..." -ForegroundColor Cyan
+$allResults | Export-Csv -Path $outputFilePath -NoTypeInformation
+
+Write-Host "Report successfully exported to $outputFilePath" -ForegroundColor Green
