@@ -7,4 +7,5 @@
 6. Azure Active Directory Group Insights
 7. M365 Password Reset Tool
 8. M365 MFA Reset Tool
-9. Upcoming.....................
+9. AAD App Registration Audit
+10. Upcoming.....................
