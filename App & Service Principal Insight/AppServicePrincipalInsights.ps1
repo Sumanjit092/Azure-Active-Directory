@@ -140,7 +140,7 @@ function Process-Owner {
 }
 
 # Process all applications
-$Apps = Get-MgApplication -Top 100
+$Apps = Get-MgApplication -All
 $AppCount = $Apps.Count
 $i = 0
 
@@ -185,7 +185,7 @@ Write-Output ("Time taken to process applications: {0:D2}:{1:D2}:{2:D2}" -f $ela
 
 # Process all service principals
 $Tenant = (Get-MgDomain | Where-Object { $_.IsInitial -eq $true }).Id
-$SPNs = Get-MgServicePrincipal -Top 100
+$SPNs = Get-MgServicePrincipal -All
 $SPNCount = $SPNs.Count
 $i = 0
 
