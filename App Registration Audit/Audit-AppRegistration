@@ -154,7 +154,7 @@ function Get-ApplicationDetails {
     )
 
     Write-Host "Collecting application details..." -ForegroundColor Cyan
-    # Retrieve the top 100 applications from Microsoft Graph
+    # Retrieve the all applications from Microsoft Graph
     $apps = Get-MgApplication -All
     $results = @()
 
