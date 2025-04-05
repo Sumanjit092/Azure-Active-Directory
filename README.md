@@ -9,4 +9,6 @@
 8. M365 MFA Reset Tool
 9. AAD App Registration Audit
 10. AAD App Service Principal Insights
-11. Upcoming.....................
+11. M365 User Report
+12. Entra RBAC Reports
+13. Upcoming.....................
