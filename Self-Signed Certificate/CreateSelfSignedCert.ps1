@@ -12,9 +12,10 @@
 
 .VERSION:
     1.0 - Intitial Version
+    1.1 - Added support for both "Cert:\LocalMachine\My" and "Cert:\CurrentUser\My" based on user permissions.
 
 .DATE:
-    21st November, 2024
+   5th May, 2025
 
 .FIRST PUBLISH DATE:
     21st November, 2024
@@ -41,6 +42,12 @@ Write-Host "https://learn.microsoft.com/en-us/windows/msix/package/create-certif
 Write-Host "===================================================================================================="
 Write-Host ""
 
+function Test-AdminRights {
+    # Checks if the user has administrative privileges
+    $isAdmin = (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+    return $isAdmin
+}
+
 function Create-SelfSignedCert {
     param (
         [Parameter(Mandatory=$true)]
@@ -54,6 +61,17 @@ function Create-SelfSignedCert {
 
         [int]$KeyLength = 2048    # Default key length (can be changed)
     )
+
+    # Determine the certificate store based on user permissions
+    if (Test-AdminRights -eq $true) {
+        # User has admin rights, use LocalMachine store
+        $CertStoreLocation = "Cert:\LocalMachine\My"
+        Write-Host "User has admin rights. Using Cert:\LocalMachine\My" -ForegroundColor Cyan
+    } else {
+        # User does NOT have admin rights, use CurrentUser store
+        $CertStoreLocation = "Cert:\CurrentUser\My"
+        Write-Host "User does NOT have admin rights. Using Cert:\CurrentUser\My" -ForegroundColor Yellow
+    }
 
     # Validate inputs
     if (-not (Test-Path $ExportFolder)) {
@@ -69,7 +87,7 @@ function Create-SelfSignedCert {
     # Create the self-signed certificate
     Write-Host "Creating certificate: CN=$SubjectName with key length $KeyLength..." -ForegroundColor Cyan
     $Cert = New-SelfSignedCertificate -Subject "CN=$SubjectName" `
-                                      -CertStoreLocation "Cert:\LocalMachine\My" `
+                                      -CertStoreLocation $CertStoreLocation `
                                       -KeyExportPolicy Exportable `
                                       -KeySpec Signature `
                                       -NotAfter (Get-Date).AddMonths($ValidityPeriod) `
@@ -93,7 +111,7 @@ function Create-SelfSignedCert {
     # Ask user to keep or remove the certificate from the store
     $KeepCert = Read-Host "Do you want to keep the certificate in the store? (Yes/No)"
     if ($KeepCert -eq "No") {
-        Remove-Item "Cert:\LocalMachine\My\$($Cert.Thumbprint)"
+        Remove-Item "$CertStoreLocation\$($Cert.Thumbprint)"
         Write-Host "Certificate removed from the store." -ForegroundColor Yellow
     } else {
         Write-Host "Certificate remains in the store." -ForegroundColor Green
