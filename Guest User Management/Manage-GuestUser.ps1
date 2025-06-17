@@ -7,7 +7,7 @@
     during execution.
 
 .DESCRIPTION:
-    GuestUserManagement.ps1 is a PowerShell script designed to manage guest users in Microsoft 365 through the Microsoft Graph API. It connects to Microsoft Graph with appropriate
+    Manage-GuestUser.ps1 is a PowerShell script designed to manage guest users in Microsoft 365 through the Microsoft Graph API. It connects to Microsoft Graph with appropriate
     permissions and retrieves guest user information. The script filters users based on activity, synchronization status, and specified parameters. Users who have been inactive for
     a defined period or have no sign-in records are processed for disabling or removal.
 
