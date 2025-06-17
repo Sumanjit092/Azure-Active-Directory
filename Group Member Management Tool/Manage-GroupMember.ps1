@@ -4,7 +4,7 @@
     on direct input or from a CSV file.
 
 .Description
-    The Manage Group Member PowerShell script (./ManageGroupMember.ps1) streamlines administrative tasks for Azure Active Directory group memberships.
+    The Manage Group Member PowerShell script (./Manage-GroupMember.ps1) streamlines administrative tasks for Azure Active Directory group memberships.
     It processes member information from either direct inputs or CSV files, validating each member's DisplayName or UserPrincipalName format
     to ensure compliance. Utilizing Azure Active Directory integration, the script performs secure operations to add or remove members as specified.
     Whether managing individual member actions or batch operations through CSV files, this tool supports efficient and effective group membership management.
