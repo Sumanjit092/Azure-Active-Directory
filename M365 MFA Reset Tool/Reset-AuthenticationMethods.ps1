@@ -4,7 +4,7 @@
    This script is essential for administrators aiming to manage and reset user authentication methods efficiently.
 
 .DESCRIPTION:
-    ResetAuthenticationMethods.ps1 is a robust PowerShell script designed to manage and reset user authentication methods in Microsoft 365 using the Microsoft Graph API.
+    Reset-AuthenticationMethods.ps1 is a robust PowerShell script designed to manage and reset user authentication methods in Microsoft 365 using the Microsoft Graph API.
     By connecting to Microsoft Graph with the necessary permissions, the script retrieves and removes the specified authentication methods for a user.
     It processes this data to ensure that only the desired authentication methods are reset, logging any errors encountered during execution.
 
