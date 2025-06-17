@@ -4,7 +4,7 @@
     Export BitLocker Keys backup from AzureAD with PowerShell
 
 .Description:
-    ExportBitLockerKey.ps1 is a PowerShell script to Retrieve BitLocker Keys backup from AzureAD for all Azure Ad Devices. 
+    Export-BitLockerKey.ps1 is a PowerShell script to Retrieve BitLocker Keys backup from AzureAD for all Azure Ad Devices. 
     It finds all devices with BitLocker Key and export a BitLocker Key Report along with the Device Name in Csv Format.
 
 .AUTHOR:
