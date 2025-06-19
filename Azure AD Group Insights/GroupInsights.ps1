@@ -13,6 +13,7 @@
 
 .VERSION:
     1.0 - Initial Version
+    1.1 - Patch Update
 
 .DATE:
     23rd December, 2024
