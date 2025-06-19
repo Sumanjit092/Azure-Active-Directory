@@ -119,7 +119,8 @@ function Log-Error {
 # Retrieve all groups
 try {
     $groups = Get-MgGroup -All -Property DisplayName, Id, Description, Mail, MailNickName, GroupTypes, OnPremisesSyncEnabled,
-    CreatedDateTime, SecurityEnabled, MailEnabled, ExpirationDateTime, RenewedDateTime
+    CreatedDateTime, SecurityEnabled, MailEnabled, IsAssignableToRole, SecurityIdentifier, MembershipRule, ProxyAddresses,
+    ExpirationDateTime, RenewedDateTime
 } catch {
     Log-Error "Failed to retrieve groups: $_"
     throw
@@ -213,10 +214,20 @@ foreach ($group in $groups) {
             "Unknown"
         }
 
+         # Determine the group role assignement status
+        $roleAssignmentStatus = if ($Group.IsAssignableToRole -eq $true) {
+            "Yes"
+        } else {
+            "No"
+        }
+
+        # Get the first audit log entry for the group (customizable: pick properties you want)
+        $auditLogEntry = Get-GroupAuditLogEntry -ObjectId $group.Id
+
         # Collect the group details
         $groupDetail = [PSCustomObject]@{
             "Group Name"           = $group.DisplayName
-            "Group Object Id"      = $group.Id
+            "Object Id"            = $group.Id
             "Description"          = $group.Description
             "Group Type"           = $groupType
             "Security Enabled"     = $securityStatus
@@ -224,6 +235,10 @@ foreach ($group in $groups) {
             "Mail"                 = $group.Mail
             "Mail Nickname"        = $group.MailNickname
             "Source"               = $Source
+            "Security Identifier"  = $group.SecurityIdentifier
+            "IsAssignableToRole"   = $roleAssignmentStatus
+            "Membership Rule"      = $group.MembershipRule
+            "Proxy Addresses"      = ($group | Select-Object -ExpandProperty ProxyAddresses) -join ";"
             "Owner Count"          = $ownerCount
             "Owners Name"          = $ownerNames -join "; "
             "Owners UPN"           = $ownerUPNs -join "; "
@@ -249,8 +264,7 @@ try {
     }
     Import-Module -Name ImportExcel
 
-    $groupDetails | Export-Excel -Path $outputFilePath -WorksheetName "AllGroups" -BoldTopRow `
-        -Title "Group Data" -TitleBold -TitleSize 14 -TitleBackgroundColor "Yellow"
+    $groupDetails | Export-Excel -Path $outputFilePath
     Write-Host "Export to Excel completed successfully. File saved at: $outputFilePath" -ForegroundColor Green
 } catch {
     Log-Error "Failed to export group details to Excel: $_"
