@@ -222,9 +222,6 @@ foreach ($group in $groups) {
             "No"
         }
 
-        # Get the first audit log entry for the group (customizable: pick properties you want)
-        $auditLogEntry = Get-GroupAuditLogEntry -ObjectId $group.Id
-
         # Collect the group details
         $groupDetail = [PSCustomObject]@{
             "Group Name"           = $group.DisplayName
